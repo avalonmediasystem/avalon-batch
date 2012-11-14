@@ -6,7 +6,7 @@ module Hydrant
 			include Enumerable
 
 			EXTENSIONS = ['csv','xls','xlsx','ods']
-			attr_reader :spreadsheet
+			attr_reader :spreadsheet, :file
 
 			class << self
 		  	def locate(root)

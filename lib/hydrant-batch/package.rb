@@ -8,6 +8,10 @@ module Hydrant
 				@manifest = Hydrant::Batch::Manifest.new(manifest)
 			end
 			
+			def title
+				File.basename(@manifest.file)
+			end
+
 			def file_list
 				@manifest.collect { |entry| entry[:files] }.flatten.collect { |f| File.join(@dir,f) }
 			end
