@@ -4,6 +4,8 @@ require "hydrant-batch/version"
 
 module Hydrant
   module Batch
+  	class Error < ::Exception; end
+  	class IncompletePackageError < Error; end
 
     def self.find_open_files(files, base_directory = '.')
 	    args = files.collect { |p| %{"#{p}"} }.join(' ')

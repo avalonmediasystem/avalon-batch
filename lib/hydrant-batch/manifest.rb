@@ -8,9 +8,48 @@ module Hydrant
 			EXTENSIONS = ['csv','xls','xlsx','ods']
 			attr_reader :spreadsheet
 
+			class << self
+		  	def locate(root)
+		  		possibles = Dir[File.join(root, "**/*.{#{EXTENSIONS.join(',')}}")]
+		  		possibles.reject do |file|
+		  			File.basename(file) =~ /^~\$/ or self.processing?(file) or self.processed?(file)
+		  		end
+		  	end
+
+		  	def processing?(file)
+					File.file?("#{file}.processing")
+		  	end
+
+		 		def processed?(file)
+					File.file?("#{file}.processed")
+		 		end
+		 	end
+
 			def initialize(file)
+				@file = file
 				@spreadsheet = Roo::Spreadsheet.open(file)
 				@field_names = @spreadsheet.row(@spreadsheet.first_row).compact.collect { |field| field.gsub(/\s/,'_').to_sym }
+			end
+
+			def start!
+				File.open("#{@file}.processing",'w') { |f| f.puts Time.now.xmlschema }
+			end
+
+			def rollback!
+				File.unlink("#{@file}.processing")
+			end
+
+			def commit!
+				File.open("#{@file}.processed",'w') { |f| f.puts Time.now.xmlschema }
+				File.unlink("#{@file}.processing")
+			end
+
+			def processing?
+				self.class.processing?(@file)
+			end
+
+			def processed?
+				self.class.processed?(@file)
 			end
 
 			def each
