@@ -16,6 +16,11 @@ module Hydrant
 				file_list.all? { |f| File.file?(f) } and Hydrant::Batch.find_open_files(file_list).empty?
 			end
 
+			def each_entry &block
+				@manifest.each do |entry|
+					block.call(entry[:fields], entry[:files])
+				end
+			end
 		end
 	end
 end
