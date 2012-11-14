@@ -1,5 +1,3 @@
-require 'tmpdir'
-
 module Hydrant
 	module Batch
 		class Package
@@ -11,7 +9,11 @@ module Hydrant
 			end
 			
 			def file_list
-				@manifest.collect { |entry| entry.files }.flatten
+				@manifest.collect { |entry| entry[:files] }.flatten.collect { |f| File.join(@dir,f) }
+			end
+
+			def complete?
+				file_list.all? { |f| File.file?(f) } and Hydrant::Batch.find_open_files(file_list).empty?
 			end
 
 		end
