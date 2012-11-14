@@ -13,7 +13,7 @@ module Hydrant
 	      result = []
 	      statuses.in_groups_of(4) do |group|
 	      	$stderr.puts group.inspect
-	        file_status = Hash[group.collect { |s| [s[0].to_sym,s[1..-1]] }]
+	        file_status = Hash[group.collect { |s| [s[0].to_sym,s[1..-1]] unless s.nil? or s.empty? }]
 	        result << file_status[:n] if (file_status[:a] =~ /w/ or file_status[:c] == 'scp')
 	      end
 	      result
