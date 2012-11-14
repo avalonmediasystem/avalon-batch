@@ -13,8 +13,8 @@ module Hydrant
 	      result = []
 	      statuses.in_groups_of(4) do |group|
 	        file_status = Hash[group.compact.collect { |s| [s[0].to_sym,s[1..-1]] }]
-	        if file_status.has_key?(:n) and File.file?(file_status[:n]) 
-	        	and (file_status[:a] =~ /w/ or file_status[:c] == 'scp')
+	        if file_status.has_key?(:n) and File.file?(file_status[:n]) and 
+	        	(file_status[:a] =~ /w/ or file_status[:c] == 'scp')
 	        		result << file_status[:n] 
 	        end
 	      end
