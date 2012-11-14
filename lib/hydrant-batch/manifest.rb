@@ -28,7 +28,7 @@ module Hydrant
 			def initialize(file)
 				@file = file
 				@spreadsheet = Roo::Spreadsheet.open(file)
-				@field_names = @spreadsheet.row(@spreadsheet.first_row).compact.collect { |field| field.gsub(/\s/,'_').to_sym }
+				@field_names = @spreadsheet.row(@spreadsheet.first_row).compact.collect { |field| field.downcase.gsub(/\s/,'_').to_sym }
 			end
 
 			def start!
