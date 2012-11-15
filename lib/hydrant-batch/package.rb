@@ -3,6 +3,10 @@ module Hydrant
 		class Package
 			attr_reader :dir, :manifest
 
+			def self.locate(root)
+				Hydrant::Batch::Manifest.locate(root).select { |f| self.new(f).complete? }
+			end
+
 			def initialize(manifest)
 				@dir = File.dirname(manifest)
 				@manifest = Hydrant::Batch::Manifest.new(manifest)
@@ -38,7 +42,7 @@ module Hydrant
 				unless complete?
 					raise Hydrant::Batch::IncompletePackageError, "Incomplete Package"
 				end
-				
+
 				@manifest.start!
 				begin
 					each_entry do |fields, files| 
