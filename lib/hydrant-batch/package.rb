@@ -35,16 +35,17 @@ module Hydrant
 			end
 
 			def process
+				unless complete?
+					raise Hydrant::Batch::IncompletePackageError, "Incomplete Package"
+				end
+				
 				@manifest.start!
 				begin
-					unless complete?
-						raise Hydrant::Batch::IncompletePackageError, "Incomplete Package"
-					end
 					each_entry do |fields, files| 
 						yield(fields, files) 
 					end
 					@manifest.commit!
-				rescue
+				rescue Exception
 					@manifest.rollback!
 					raise
 				end
