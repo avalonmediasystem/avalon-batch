@@ -4,7 +4,7 @@ module Hydrant
 			attr_reader :dir, :manifest
 
 			def self.locate(root)
-				Hydrant::Batch::Manifest.locate(root).select { |f| self.new(f).complete? }
+				Hydrant::Batch::Manifest.locate(root).collect { |f| p = self.new(f); p.complete? ? p : nil }.compact
 			end
 
 			def initialize(manifest)
