@@ -1,3 +1,4 @@
+require 'active_support/core_ext/array'
 require "hydrant-batch/manifest"
 require "hydrant-batch/package"
 require "hydrant-batch/version"
