@@ -62,7 +62,8 @@ module Hydrant
             (val.is_a?(Float) and (val == val.to_i)) ? val.to_i.to_s : val.to_s
           end
           content = values[@field_names.length..-1].join(';').split(/\s*;\s*/)
-          fields = Hash[@field_names.zip(values[0..@field_names.length-1])]
+          fields = Hash.new { |h,k| h[k] = [] }
+          @field_names.each_with_index { |f,i| fields[f] << values[i] unless values[i].blank? }
           yield({fields: fields, files: content})
         end
       end
