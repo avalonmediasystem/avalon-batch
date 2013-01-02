@@ -64,6 +64,7 @@ module Hydrant
           content = values[@field_names.length..-1].join(';').split(/\s*;\s*/)
           fields = Hash.new { |h,k| h[k] = [] }
           @field_names.each_with_index { |f,i| fields[f] << values[i] unless values[i].blank? }
+          fields[:publish] = (not (fields[:publish].first.to_s =~ /^(y(es)?|t(rue)?)$/i).nil?)
           yield({fields: fields, files: content})
         end
       end
