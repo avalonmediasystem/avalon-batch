@@ -6,7 +6,7 @@ module Hydrant
       include Enumerable
 
       EXTENSIONS = ['csv','xls','xlsx','ods']
-      attr_reader :spreadsheet, :file
+      attr_reader :spreadsheet, :file, :name, :email
 
       class << self
         def locate(root)
@@ -28,7 +28,9 @@ module Hydrant
       def initialize(file)
         @file = file
         @spreadsheet = Roo::Spreadsheet.open(file)
-        @field_names = @spreadsheet.row(@spreadsheet.first_row).collect { |field| 
+        @name = @spreadsheet.row(@spreadsheet.first_row)[0]
+        @email = @spreadsheet.row(@spreadsheet.first_row)[1]
+        @field_names = @spreadsheet.row(@spreadsheet.first_row + 1).collect { |field| 
           field.to_s.downcase.gsub(/\s/,'_').strip.to_sym 
         }.select { |f| not f.empty? }
       end
@@ -55,7 +57,7 @@ module Hydrant
       end
 
       def each
-        f = @spreadsheet.first_row + 1
+        f = @spreadsheet.first_row + 2
         l = @spreadsheet.last_row
         f.upto(l) do |index|
           values = @spreadsheet.row(index).collect do |val|
