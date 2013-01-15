@@ -60,14 +60,28 @@ module Hydrant
         f = @spreadsheet.first_row + 2
         l = @spreadsheet.last_row
         f.upto(l) do |index|
+          opts = {
+            :publish => false,
+            :hidden  => false
+          }
+
           values = @spreadsheet.row(index).collect do |val|
             (val.is_a?(Float) and (val == val.to_i)) ? val.to_i.to_s : val.to_s
           end
           content = values[@field_names.length..-1].join(';').split(/\s*;\s*/)
           fields = Hash.new { |h,k| h[k] = [] }
           @field_names.each_with_index { |f,i| fields[f] << values[i] unless values[i].blank? }
-          fields[:publish] = (not (fields[:publish].first.to_s =~ /^(y(es)?|t(rue)?)$/i).nil?)
-          yield({fields: fields, files: content})
+
+          opts.keys.each { |opt|
+            val = Array(fields.delete(opt)).first.to_s
+            if opts[opt].is_a?(TrueClass) or opts[opt].is_a?(FalseClass)
+              opts[opt] = (not (val =~ /^(y(es)?|t(rue)?)$/i).nil?)
+            else
+              opts[opt] = val
+            end
+          }
+          
+          yield({fields: fields, files: content, opts: opts})
         end
       end
     end
