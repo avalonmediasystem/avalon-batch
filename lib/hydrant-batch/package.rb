@@ -27,7 +27,7 @@ module Hydrant
       def each_entry
         @manifest.each do |entry|
           files = entry[:files].collect { |f| File.join(@dir,f) }
-          yield(entry[:fields], files)
+          yield(entry[:fields], files, entry[:opts])
         end
       end
 
@@ -46,8 +46,8 @@ module Hydrant
 
         @manifest.start!
         begin
-          each_entry do |fields, files| 
-            yield(fields, files) 
+          each_entry do |fields, files, opts| 
+            yield(fields, files, opts) 
           end
           @manifest.commit!
         rescue Exception
