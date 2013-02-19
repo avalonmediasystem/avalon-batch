@@ -4,9 +4,11 @@ module Hydrant
   module Batch
     class Manifest
       include Enumerable
+      extend Forwardable
 
       EXTENSIONS = ['csv','xls','xlsx','ods']
-      attr_reader :spreadsheet, :file, :name, :email
+      def_delegators :@entries, :each
+      attr_reader :spreadsheet, :file, :name, :email, :entries
 
       class << self
         def locate(root)
@@ -26,6 +28,7 @@ module Hydrant
       end
 
       def initialize(file)
+        @entries = []
         @file = file
         @spreadsheet = Roo::Spreadsheet.open(file)
         @name = @spreadsheet.row(@spreadsheet.first_row)[0]
@@ -33,6 +36,7 @@ module Hydrant
         @field_names = @spreadsheet.row(@spreadsheet.first_row + 1).collect { |field| 
           field.to_s.downcase.gsub(/\s/,'_').strip.to_sym 
         }.select { |f| not f.empty? }
+        create_entries!
       end
 
       def start!
@@ -56,7 +60,12 @@ module Hydrant
         self.class.processed?(@file)
       end
 
-      def each
+      def errors
+        @errors ||= []
+      end
+
+      private
+      def create_entries!
         f = @spreadsheet.first_row + 2
         l = @spreadsheet.last_row
         f.upto(l) do |index|
@@ -80,10 +89,11 @@ module Hydrant
               opts[opt] = val
             end
           }
-          
-          yield({fields: fields, files: content, opts: opts})
+
+          entries << Entry.new(fields, content, opts, index)
         end
       end
+
     end
   end
 end
