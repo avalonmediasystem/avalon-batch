@@ -8,7 +8,7 @@ module Hydrant
       def_delegators :@manifest, :each
 
       def self.locate(root)
-        Hydrant::Batch::Manifest.locate(root).collect { |f| p = self.new(f); p.complete? ? p : nil }.compact
+        Hydrant::Batch::Manifest.locate(root).collect { |f| self.new(f) }
       end
 
       def initialize(manifest)
@@ -44,10 +44,6 @@ module Hydrant
       end
 
       def process
-        unless complete?
-          raise Hydrant::Batch::IncompletePackageError, "Incomplete Package"
-        end
-
         @manifest.start!
         begin
           each_entry do |fields, files, opts, entry|
@@ -55,7 +51,7 @@ module Hydrant
           end
           @manifest.commit!
         rescue Exception
-          @manifest.rollback!
+          @manifest.error!
           raise
         end
       end

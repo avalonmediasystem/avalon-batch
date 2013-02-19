@@ -14,8 +14,20 @@ module Hydrant
         def locate(root)
           possibles = Dir[File.join(root, "**/*.{#{EXTENSIONS.join(',')}}")]
           possibles.reject do |file|
-            File.basename(file) =~ /^~\$/ or self.processing?(file) or self.processed?(file)
+            File.basename(file) =~ /^~\$/ or self.error?(file) or self.processing?(file) or self.processed?(file)
           end
+        end
+
+        def error?(file)
+          if File.file?("#{file}.error")
+            if File.mtime(file) > File.mtime("#{file}.error")
+              File.unlink("#{file}.error")
+              return false
+            else
+              return true
+            end
+          end
+          return false
         end
 
         def processing?(file)
@@ -28,8 +40,12 @@ module Hydrant
       end
 
       def initialize(file)
-        @entries = []
         @file = file
+        load!
+      end
+
+      def load!
+        @entries = []
         @spreadsheet = Roo::Spreadsheet.open(file)
         @name = @spreadsheet.row(@spreadsheet.first_row)[0]
         @email = @spreadsheet.row(@spreadsheet.first_row)[1]
@@ -43,13 +59,31 @@ module Hydrant
         File.open("#{@file}.processing",'w') { |f| f.puts Time.now.xmlschema }
       end
 
+      def error!
+        File.open("#{@file}.error",'w') do |f| 
+          entries.each do |entry|
+            if entry.errors.count > 0
+              f.puts "Row #{entry.row}:"
+              entry.errors.messages.each { |k,m| f.puts %{  #{m.join("\n  ")}} }
+            end
+          end
+        end
+        rollback! if processing?
+      end
+
       def rollback!
         File.unlink("#{@file}.processing")
       end
 
       def commit!
         File.open("#{@file}.processed",'w') { |f| f.puts Time.now.xmlschema }
-        File.unlink("#{@file}.processing")
+        rollback! if processing?
+      end
+
+      def error?
+        result = self.class.error?(@file)
+        load! unless result
+        result
       end
 
       def processing?
