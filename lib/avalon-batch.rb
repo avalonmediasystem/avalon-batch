@@ -1,10 +1,10 @@
 require 'active_support/core_ext/array'
-require "hydrant-batch/entry"
-require "hydrant-batch/manifest"
-require "hydrant-batch/package"
-require "hydrant-batch/version"
+require "avalon-batch/entry"
+require "avalon-batch/manifest"
+require "avalon-batch/package"
+require "avalon-batch/version"
 
-module Hydrant
+module Avalon
   module Batch
     class Error < ::Exception; end
     class IncompletePackageError < Error; end

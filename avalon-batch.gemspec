@@ -1,11 +1,11 @@
 # -*- encoding: utf-8 -*-
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'hydrant-batch/version'
+require 'avalon-batch/version'
 
 Gem::Specification.new do |gem|
-  gem.name          = "hydrant-batch"
-  gem.version       = Hydrant::Batch::VERSION
+  gem.name          = "avalon-batch"
+  gem.version       = Avalon::Batch::VERSION
   gem.authors       = ["Michael B. Klein"]
   gem.email         = ["mbklein@gmail.com"]
   gem.description   = %q{Batch ingest tools for Avalon}

@@ -1,4 +1,4 @@
-module Hydrant
+module Avalon
   module Batch
     class Package
       include Enumerable
@@ -8,12 +8,12 @@ module Hydrant
       def_delegators :@manifest, :each
 
       def self.locate(root)
-        Hydrant::Batch::Manifest.locate(root).collect { |f| self.new(f) }
+        Avalon::Batch::Manifest.locate(root).collect { |f| self.new(f) }
       end
 
       def initialize(manifest)
         @dir = File.dirname(manifest)
-        @manifest = Hydrant::Batch::Manifest.new(manifest)
+        @manifest = Avalon::Batch::Manifest.new(manifest)
       end
       
       def title

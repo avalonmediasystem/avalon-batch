@@ -1,6 +1,6 @@
 require 'roo'
 
-module Hydrant
+module Avalon
   module Batch
     class Manifest
       include Enumerable

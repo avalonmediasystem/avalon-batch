@@ -1,4 +1,4 @@
-module Hydrant
+module Avalon
   module Batch
     class Entry
     	extend ActiveModel::Translation
