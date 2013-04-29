@@ -10,7 +10,9 @@ Gem::Specification.new do |gem|
   gem.email         = ["mbklein@gmail.com"]
   gem.description   = %q{Batch ingest tools for Avalon}
   gem.summary       = %q{Batch ingest tools for Avalon}
-
+  gem.license       = 'Apache 2.0'
+  gem.homepage      = 'http://www.avalonmediasystem.org/'
+  
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
