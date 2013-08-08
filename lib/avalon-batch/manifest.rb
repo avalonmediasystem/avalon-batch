@@ -154,7 +154,7 @@ module Avalon
             end
           }
 
-          entries << Entry.new(fields, content, opts, index)
+          entries << Entry.new(fields.select { |f| !FILE_FIELDS.include?(f) }, content, opts, index)
         end
       end
 
