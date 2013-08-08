@@ -36,7 +36,7 @@ module Avalon
       end
 
       def file_list
-        @manifest.collect { |entry| entry.files }.flatten.collect { |f| File.join(@dir,f) }
+        @manifest.collect { |entry| entry.files }.flatten.collect { |f| File.join(@dir,f[:file]) }
       end
 
       def complete?
@@ -45,7 +45,8 @@ module Avalon
 
       def each_entry
         @manifest.each do |entry|
-          files = entry.files.collect { |f| File.join(@dir,f) }
+          files = entry.files.dup
+          files.each_pair { |k,f| files[k] = File.join(@dir,f) }
           yield(entry.fields, files, entry.opts, entry)
         end
       end
@@ -74,7 +75,7 @@ module Avalon
       def validate
         @manifest.each do |entry|
           entry.errors.clear
-          files = entry.files.collect { |f| File.join(@dir,f) }
+          files = entry.files.collect { |f| File.join(@dir,f[:file]) }
           validator = yield(entry)
           validator.valid?
           files.each_with_index do |f,i| 

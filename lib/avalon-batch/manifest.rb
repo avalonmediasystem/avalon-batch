@@ -22,6 +22,8 @@ module Avalon
       extend Forwardable
 
       EXTENSIONS = ['csv','xls','xlsx','ods']
+      FILE_FIELDS = [:file,:label,:offset]
+
       def_delegators :@entries, :each
       attr_reader :spreadsheet, :file, :name, :email, :entries
 
@@ -64,7 +66,10 @@ module Avalon
         @spreadsheet = Roo::Spreadsheet.open(file)
         @name = @spreadsheet.row(@spreadsheet.first_row)[0]
         @email = @spreadsheet.row(@spreadsheet.first_row)[1]
-        @field_names = @spreadsheet.row(@spreadsheet.first_row + 1).collect { |field| 
+
+        header_row = @spreadsheet.row(@spreadsheet.first_row + 1)
+
+        @field_names = header_row.collect { |field| 
           field.to_s.downcase.gsub(/\s/,'_').strip.to_sym 
         }.select { |f| not f.empty? }
         create_entries!
@@ -126,9 +131,19 @@ module Avalon
           values = @spreadsheet.row(index).collect do |val|
             (val.is_a?(Float) and (val == val.to_i)) ? val.to_i.to_s : val.to_s
           end
-          content = values[@field_names.length..-1].join(';').split(/\s*;\s*/)
+          content=[]
+
           fields = Hash.new { |h,k| h[k] = [] }
-          @field_names.each_with_index { |f,i| fields[f] << values[i] unless values[i].blank? }
+          @field_names.each_with_index do |f,i| 
+            unless values[i].blank?
+              if FILE_FIELDS.include?(f)
+                content << {} if f == :file
+                content.last[f] = values[i]
+              else
+                fields[f] << values[i] 
+              end
+            end
+          end
 
           opts.keys.each { |opt|
             val = Array(fields.delete(opt)).first.to_s

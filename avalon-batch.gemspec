@@ -20,5 +20,7 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency 'roo'
   gem.add_dependency 'activesupport'
+  gem.add_dependency 'activemodel'
   gem.add_development_dependency 'pry'
+  gem.add_development_dependency 'pry-debugger'
 end
