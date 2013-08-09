@@ -46,7 +46,7 @@ module Avalon
       def each_entry
         @manifest.each do |entry|
           files = entry.files.dup
-          files.each_pair { |k,f| files[k] = File.join(@dir,f) }
+          files.each { |file| file[:file] = File.join(@dir,file[:file]) }
           yield(entry.fields, files, entry.opts, entry)
         end
       end
