@@ -75,9 +75,10 @@ module Avalon
       def validate
         @manifest.each do |entry|
           entry.errors.clear
-          files = entry.files.collect { |f| File.join(@dir,f[:file]) }
           validator = yield(entry)
           validator.valid?
+          files = entry.files.collect { |f| File.join(@dir,f[:file]) }
+          entry.errors.add(:content, "No files listed") if files.empty?
           files.each_with_index do |f,i| 
             validator.errors.add(:content, "File not found: #{entry.files[i]}") unless File.file?(f)
           end
