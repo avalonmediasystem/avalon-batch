@@ -22,7 +22,7 @@ module Avalon
       extend Forwardable
 
       EXTENSIONS = ['csv','xls','xlsx','ods']
-      FILE_FIELDS = [:file,:label,:offset]
+      FILE_FIELDS = [:file,:label,:offset,:skip_transcoding]
 
       def_delegators :@entries, :each
       attr_reader :spreadsheet, :file, :name, :email, :entries
@@ -119,6 +119,10 @@ module Avalon
       end
 
       private
+      def true?(value)
+        not (value.to_s =~ /^(y(es)?|t(rue)?)$/i).nil?
+      end
+
       def create_entries!
         f = @spreadsheet.first_row + 2
         l = @spreadsheet.last_row
@@ -138,7 +142,7 @@ module Avalon
             unless values[i].blank?
               if FILE_FIELDS.include?(f)
                 content << {} if f == :file
-                content.last[f] = values[i]
+                content.last[f] = f == :skip_transcoding ? true?(values[i]) : values[i]
               else
                 fields[f] << values[i] 
               end
@@ -148,7 +152,7 @@ module Avalon
           opts.keys.each { |opt|
             val = Array(fields.delete(opt)).first.to_s
             if opts[opt].is_a?(TrueClass) or opts[opt].is_a?(FalseClass)
-              opts[opt] = (not (val =~ /^(y(es)?|t(rue)?)$/i).nil?)
+              opts[opt] = true?(val)
             else
               opts[opt] = val
             end
