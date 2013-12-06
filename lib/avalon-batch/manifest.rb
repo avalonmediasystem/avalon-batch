@@ -22,7 +22,7 @@ module Avalon
       extend Forwardable
 
       EXTENSIONS = ['csv','xls','xlsx','ods']
-      FILE_FIELDS = [:file,:label,:offset,:skip_transcoding]
+      FILE_FIELDS = [:file,:label,:offset,:skip_transcoding,:absolute_location]
 
       def_delegators :@entries, :each
       attr_reader :spreadsheet, :file, :name, :email, :entries
