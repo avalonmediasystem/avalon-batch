@@ -63,29 +63,37 @@ module Avalon
 
       def load!
         @entries = []
-        @spreadsheet = Roo::Spreadsheet.open(file)
-        @name = @spreadsheet.row(@spreadsheet.first_row)[0]
-        @email = @spreadsheet.row(@spreadsheet.first_row)[1]
+        begin
+          @spreadsheet = Roo::Spreadsheet.open(file)
+          @name = @spreadsheet.row(@spreadsheet.first_row)[0]
+          @email = @spreadsheet.row(@spreadsheet.first_row)[1]
 
-        header_row = @spreadsheet.row(@spreadsheet.first_row + 1)
+          header_row = @spreadsheet.row(@spreadsheet.first_row + 1)
 
-        @field_names = header_row.collect { |field| 
-          field.to_s.downcase.gsub(/\s/,'_').strip.to_sym 
-        }.select { |f| not f.empty? }
-        create_entries!
+          @field_names = header_row.collect { |field| 
+            field.to_s.downcase.gsub(/\s/,'_').strip.to_sym 
+          }.select { |f| not f.empty? }
+          create_entries!
+        rescue Exception => err
+          error! "Invalid manifest file: #{err.message}"
+        end
       end
 
       def start!
         File.open("#{@file}.processing",'w') { |f| f.puts Time.now.xmlschema }
       end
 
-      def error!
+      def error! msg=nil
         File.open("#{@file}.error",'w') do |f| 
-          entries.each do |entry|
-            if entry.errors.count > 0
-              f.puts "Row #{entry.row}:"
-              entry.errors.messages.each { |k,m| f.puts %{  #{m.join("\n  ")}} }
+          if msg.nil?
+            entries.each do |entry|
+              if entry.errors.count > 0
+                f.puts "Row #{entry.row}:"
+                entry.errors.messages.each { |k,m| f.puts %{  #{m.join("\n  ")}} }
+              end
             end
+          else
+            f.puts msg
           end
         end
         rollback! if processing?
