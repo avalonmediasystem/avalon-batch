@@ -84,7 +84,7 @@ module Avalon
       end
 
       def error! msg=nil
-        File.open("#{@file}.error",'w') do |f| 
+        File.open("#{@file}.error",'a') do |f| 
           if msg.nil?
             entries.each do |entry|
               if entry.errors.count > 0
