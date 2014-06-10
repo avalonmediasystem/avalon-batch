@@ -25,7 +25,7 @@ module Avalon
       FILE_FIELDS = [:file,:label,:offset,:skip_transcoding,:absolute_location]
 
       def_delegators :@entries, :each
-      attr_reader :spreadsheet, :file, :name, :email, :entries
+      attr_reader :spreadsheet, :file, :name, :email, :entries, :package
 
       class << self
         def locate(root)
@@ -56,8 +56,9 @@ module Avalon
         end
       end
 
-      def initialize(file)
+      def initialize(file, package)
         @file = file
+        @package = package
         load!
       end
 
@@ -166,7 +167,7 @@ module Avalon
             end
           }
 
-          entries << Entry.new(fields.select { |f| !FILE_FIELDS.include?(f) }, content, opts, index)
+          entries << Entry.new(fields.select { |f| !FILE_FIELDS.include?(f) }, content, opts, index, self)
         end
       end
 
