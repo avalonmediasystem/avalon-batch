@@ -41,7 +41,6 @@ module Avalon
         end
 
         def valid?
-          @errors.clear
           # Set errors if does not validate against media_object model
           media_object.valid?
           media_object.errors.messages.each_pair { |field,errs|
@@ -57,7 +56,10 @@ module Avalon
             @errors.add(:content, "File not found: #{files[i]}") unless File.file?(f)
           end
           # Replace collection error if collection not found
-          # TODO
+          if media_object.collection.nil?
+            @errors.messages[:collection] = ["Collection not found: #{@fields[:collection].first}"]
+            @errors.messages.delete(:governing_policy)
+          end
         end
 
         def self.offset_valid?( offset )
