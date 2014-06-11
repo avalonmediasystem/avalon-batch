@@ -73,7 +73,7 @@ module Avalon
 
           @field_names = header_row.collect { |field| 
             field.to_s.downcase.gsub(/\s/,'_').strip.to_sym 
-          }.select { |f| not f.empty? }
+          }
           create_entries!
         rescue Exception => err
           error! "Invalid manifest file: #{err.message}"
@@ -148,7 +148,7 @@ module Avalon
 
           fields = Hash.new { |h,k| h[k] = [] }
           @field_names.each_with_index do |f,i| 
-            unless values[i].blank?
+            unless f.blank? || values[i].blank?
               if FILE_FIELDS.include?(f)
                 content << {} if f == :file
                 content.last[f] = f == :skip_transcoding ? true?(values[i]) : values[i]
