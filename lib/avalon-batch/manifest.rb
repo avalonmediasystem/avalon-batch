@@ -25,7 +25,7 @@ module Avalon
       FILE_FIELDS = [:file,:label,:offset,:skip_transcoding,:absolute_location]
 
       def_delegators :@entries, :each
-      attr_reader :spreadsheet, :file, :name, :email, :entries
+      attr_reader :spreadsheet, :file, :name, :email, :entries, :package
 
       class << self
         def locate(root)
@@ -56,8 +56,9 @@ module Avalon
         end
       end
 
-      def initialize(file)
+      def initialize(file, package)
         @file = file
+        @package = package
         load!
       end
 
@@ -72,7 +73,7 @@ module Avalon
 
           @field_names = header_row.collect { |field| 
             field.to_s.downcase.gsub(/\s/,'_').strip.to_sym 
-          }.select { |f| not f.empty? }
+          }
           create_entries!
         rescue Exception => err
           error! "Invalid manifest file: #{err.message}"
@@ -147,7 +148,7 @@ module Avalon
 
           fields = Hash.new { |h,k| h[k] = [] }
           @field_names.each_with_index do |f,i| 
-            unless values[i].blank?
+            unless f.blank? || values[i].blank?
               if FILE_FIELDS.include?(f)
                 content << {} if f == :file
                 content.last[f] = f == :skip_transcoding ? true?(values[i]) : values[i]
@@ -166,7 +167,7 @@ module Avalon
             end
           }
 
-          entries << Entry.new(fields.select { |f| !FILE_FIELDS.include?(f) }, content, opts, index)
+          entries << Entry.new(fields.select { |f| !FILE_FIELDS.include?(f) }, content, opts, index, self)
         end
       end
 

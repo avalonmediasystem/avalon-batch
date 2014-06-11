@@ -28,11 +28,16 @@ module Avalon
 
       def initialize(manifest)
         @dir = File.dirname(manifest)
-        @manifest = Avalon::Batch::Manifest.new(manifest)
+        @manifest = Avalon::Batch::Manifest.new(manifest, self)
       end
       
       def title
         File.basename(@manifest.file)
+      end
+
+      def user
+        @user ||= User.where(username: @manifest.email).first || User.where(email: @manifest.email).first
+        @user
       end
 
       def file_list
@@ -44,10 +49,10 @@ module Avalon
       end
 
       def each_entry
-        @manifest.each do |entry|
+        @manifest.each_with_index do |entry, index|
           files = entry.files.dup
           files.each { |file| file[:file] = File.join(@dir,file[:file]) }
-          yield(entry.fields, files, entry.opts, entry)
+          yield(entry.fields, files, entry.opts, entry, index)
         end
       end
 
@@ -59,39 +64,21 @@ module Avalon
         @manifest.processed?
       end
 
-      def process
+      def valid?
+        @manifest.each { |entry| entry.valid? }
+        @manifest.all? { |entry| entry.errors.count == 0 }
+      end
+
+      def process!
         @manifest.start!
         begin
-          each_entry do |fields, files, opts, entry|
-            yield(fields, files, opts, entry) 
-          end
+          media_objects = @manifest.entries.collect { |entry| entry.process! }
           @manifest.commit!
         rescue Exception
           @manifest.error!
           raise
         end
-      end
-
-      def validate
-        @manifest.each do |entry|
-          entry.errors.clear
-          validator = yield(entry)
-          validator.valid?
-          files = entry.files.collect { |f| File.join(@dir,f[:file]) }
-          entry.errors.add(:content, "No files listed") if files.empty?
-          files.each_with_index do |f,i| 
-            validator.errors.add(:content, "File not found: #{entry.files[i]}") unless File.file?(f)
-          end
-          validator.errors.messages.each_pair { |field,errs|
-            errs.each { |err| entry.errors.add(field, err) }
-          }
-        end
-
-        return valid?
-      end
-
-      def valid?
-        @manifest.all? { |entry| entry.errors.count == 0 }
+        media_objects
       end
 
       def errors

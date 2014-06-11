@@ -19,16 +19,99 @@ module Avalon
     class Entry
     	extend ActiveModel::Translation
 
-    	attr_reader :fields, :files, :opts, :row, :errors
+    	attr_reader :fields, :files, :opts, :row, :errors, :manifest, :collection
 
-    	def initialize(fields, files, opts, row)
+    	def initialize(fields, files, opts, row, manifest)
     		@fields = fields
     		@files  = files
     		@opts   = opts
     		@row    = row
+                @manifest = manifest
     		@errors = ActiveModel::Errors.new(self)
+                @files.each { |file| file[:file] = File.join(@manifest.package.dir,file[:file]) }
     	end
 
+        def media_object
+          @collection ||= Admin::Collection.where(name: fields[:collection]).first
+          @media_object ||= MediaObject.new(avalon_uploader: @manifest.package.user.user_key, collection: collection).tap do |mo|
+            mo.workflow.origin = 'batch'
+            mo.update_datastream(:descMetadata, fields.dup)
+          end
+          @media_object
+        end
+
+        def valid?
+          # Set errors if does not validate against media_object model
+          media_object.valid?
+          media_object.errors.messages.each_pair { |field,errs|
+            errs.each { |err| @errors.add(field, err) }
+          }
+          # Check file offsets for valid format
+          @files.each {|file_spec| @errors.add(:offset, "Invalid offset: #{file_spec[:offset]}") if file_spec[:offset].present? && !Avalon::Batch::Entry.offset_valid?(file_spec[:offset])}
+          # Ensure files are listed
+          files = @files.collect { |f| f[:file] }
+          @errors.add(:content, "No files listed") if files.empty?
+          # Ensure listed files exist
+          files.each_with_index do |f,i|
+            @errors.add(:content, "File not found: #{files[i]}") unless File.file?(f)
+          end
+          # Replace collection error if collection not found
+          if media_object.collection.nil?
+            @errors.messages[:collection] = ["Collection not found: #{@fields[:collection].first}"]
+            @errors.messages.delete(:governing_policy)
+          end
+        end
+
+        def self.offset_valid?( offset )
+          tokens = offset.split(':')
+          return false unless (1...4).include? tokens.size
+          seconds = tokens.pop
+          return false unless /^\d{1,2}([.]\d*)?$/ =~ seconds
+          return false unless seconds.to_f < 60
+          unless tokens.empty?
+            minutes = tokens.pop
+            return false unless /^\d{1,2}$/ =~ minutes
+            return false unless minutes.to_i < 60
+            unless tokens.empty?
+              hours = tokens.pop
+              return false unless /^\d{1,}$/ =~ hours
+            end
+          end
+          true
+        end
+
+      def process!
+        media_object.save
+
+        @files.each do |file_spec|
+          master_file = MasterFile.new(mediaobject: media_object).tap do |mf|
+            mf.setContent(File.open(file_spec[:file], 'rb'))
+            mf.absolute_location = file_spec[:absolute_location] if file_spec[:absolute_location].present?
+            mf.set_workflow(file_spec[:skip_transcoding] ? 'skip_transcoding' : false)
+            mf.label = file_spec[:label] if file_spec[:label].present?
+            mf.poster_offset = file_spec[:offset] if file_spec[:offset].present?
+          end
+          if master_file.save
+            media_object.save(validate: false)
+            master_file.process
+          end
+        end
+
+        context = {media_object: { pid: media_object.pid, access: 'private' }, mediaobject: media_object, user: @manifest.package.user.user_key, hidden: opts[:hidden] ? '1' : nil }
+        HYDRANT_STEPS.get_step('access-control').execute context
+        media_object.workflow.last_completed_step = 'access-control'
+
+        if opts[:publish]
+          media_object.publish!(@manifest.package.user.user_key)
+          media_object.workflow.publish
+        end
+
+        unless media_object.save
+          logger.error "Problem saving MediaObject: #{media_object}"
+        end
+
+        media_object
+      end
     end
   end
 end
