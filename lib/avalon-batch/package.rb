@@ -19,16 +19,17 @@ module Avalon
       include Enumerable
       extend Forwardable
 
-      attr_reader :dir, :manifest
+      attr_reader :dir, :manifest, :collection
       def_delegators :@manifest, :each
 
-      def self.locate(root)
-        Avalon::Batch::Manifest.locate(root).collect { |f| self.new(f) }
+      def self.locate(root, collection)
+        Avalon::Batch::Manifest.locate(root).collect { |f| self.new(f, collection) }
       end
 
-      def initialize(manifest)
+      def initialize(manifest, collection)
         @dir = File.dirname(manifest)
         @manifest = Avalon::Batch::Manifest.new(manifest, self)
+        @collection = collection
       end
       
       def title

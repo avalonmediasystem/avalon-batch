@@ -23,6 +23,7 @@ module Avalon
 
       EXTENSIONS = ['csv','xls','xlsx','ods']
       FILE_FIELDS = [:file,:label,:offset,:skip_transcoding,:absolute_location]
+      SKIP_FIELDS = [:collection]
 
       def_delegators :@entries, :each
       attr_reader :spreadsheet, :file, :name, :email, :entries, :package
@@ -148,7 +149,7 @@ module Avalon
 
           fields = Hash.new { |h,k| h[k] = [] }
           @field_names.each_with_index do |f,i| 
-            unless f.blank? || values[i].blank?
+            unless f.blank? || SKIP_FIELDS.include?(f) || values[i].blank?
               if FILE_FIELDS.include?(f)
                 content << {} if f == :file
                 content.last[f] = f == :skip_transcoding ? true?(values[i]) : values[i]
