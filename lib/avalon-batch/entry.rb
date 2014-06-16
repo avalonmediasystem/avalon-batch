@@ -32,8 +32,8 @@ module Avalon
     	end
 
         def media_object
-          @collection ||= Admin::Collection.where(name: fields[:collection]).first
-          @media_object ||= MediaObject.new(avalon_uploader: @manifest.package.user.user_key, collection: collection).tap do |mo|
+          @media_object ||= MediaObject.new(avalon_uploader: @manifest.package.user.user_key, 
+                                            collection: @manifest.package.collection).tap do |mo|
             mo.workflow.origin = 'batch'
             mo.update_datastream(:descMetadata, fields.dup)
           end
