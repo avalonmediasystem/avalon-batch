@@ -84,7 +84,8 @@ module Avalon
         media_object.save
 
         @files.each do |file_spec|
-          master_file = MasterFile.new(mediaobject: media_object).tap do |mf|
+          master_file = MasterFile.new.tap do |mf|
+            mf.mediaobject= media_object
             mf.setContent(File.open(file_spec[:file], 'rb'))
             mf.absolute_location = file_spec[:absolute_location] if file_spec[:absolute_location].present?
             mf.set_workflow(file_spec[:skip_transcoding] ? 'skip_transcoding' : false)
