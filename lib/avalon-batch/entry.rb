@@ -84,14 +84,14 @@ module Avalon
         media_object.save
 
         @files.each do |file_spec|
-          master_file = MasterFile.new.tap do |mf|
-            mf.mediaobject= media_object
-            mf.setContent(File.open(file_spec[:file], 'rb'))
-            mf.absolute_location = file_spec[:absolute_location] if file_spec[:absolute_location].present?
-            mf.set_workflow(file_spec[:skip_transcoding] ? 'skip_transcoding' : false)
-            mf.label = file_spec[:label] if file_spec[:label].present?
-            mf.poster_offset = file_spec[:offset] if file_spec[:offset].present?
-          end
+          master_file = MasterFile.new
+          master_file.save(validate: false) #required: need pid before setting mediaobject
+          master_file.mediaobject = media_object
+          master_file.setContent(File.open(file_spec[:file], 'rb'))
+          master_file.absolute_location = file_spec[:absolute_location] if file_spec[:absolute_location].present?
+          master_file.set_workflow(file_spec[:skip_transcoding] ? 'skip_transcoding' : false)
+          master_file.label = file_spec[:label] if file_spec[:label].present?
+          master_file.poster_offset = file_spec[:offset] if file_spec[:offset].present?
           if master_file.save
             media_object.save(validate: false)
             master_file.process
