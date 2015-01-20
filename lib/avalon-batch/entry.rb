@@ -53,7 +53,7 @@ module Avalon
           @errors.add(:content, "No files listed") if files.empty?
           # Ensure listed files exist
           files.each_with_index do |f,i|
-            @errors.add(:content, "File not found: #{files[i]}") unless File.file?(f)
+            @errors.add(:content, "File not found: #{files[i]}") unless File.file?(f) || !derivativePaths(f).empty?
           end
           # Replace collection error if collection not found
           if media_object.collection.nil?
@@ -87,11 +87,12 @@ module Avalon
           master_file = MasterFile.new
           master_file.save(validate: false) #required: need pid before setting mediaobject
           master_file.mediaobject = media_object
-          master_file.setContent(File.open(file_spec[:file], 'rb'))
           master_file.absolute_location = file_spec[:absolute_location] if file_spec[:absolute_location].present?
           master_file.set_workflow(file_spec[:skip_transcoding] ? 'skip_transcoding' : false)
           master_file.label = file_spec[:label] if file_spec[:label].present?
           master_file.poster_offset = file_spec[:offset] if file_spec[:offset].present?
+          
+          master_file.setContent(gatherFiles(file_spec[:file]))
           if master_file.save
             media_object.save(validate: false)
             master_file.process
@@ -112,6 +113,28 @@ module Avalon
         end
 
         media_object
+      end
+
+      def gatherFiles(file)
+        derivatives = {}
+        %w(low medium high).each do |quality|
+          derivative = derivativePath(file, quality)
+          derivatives["quality-#{quality}"] = File.new(derivative) if File.file? derivative
+        end
+        derivatives.empty? ? File.new(file) : derivatives
+      end
+
+      def derivativePaths(filename)
+        paths = []
+        %w(low medium high).each do |quality|
+          derivative = derivativePath(filename, quality)
+          paths << derivative if File.file? derivative
+        end
+        paths
+      end
+
+      def derivativePath(filename, quality)
+        filename.dup.insert(filename.rindex('.'), ".#{quality}")
       end
     end
   end
