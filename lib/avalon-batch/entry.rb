@@ -46,20 +46,38 @@ module Avalon
           media_object.errors.messages.each_pair { |field,errs|
             errs.each { |err| @errors.add(field, err) }
           }
-          # Check file offsets for valid format
-          @files.each {|file_spec| @errors.add(:offset, "Invalid offset: #{file_spec[:offset]}") if file_spec[:offset].present? && !Avalon::Batch::Entry.offset_valid?(file_spec[:offset])}
+          files = @files.select {|file_spec| file_valid?(file_spec)}
           # Ensure files are listed
-          files = @files.collect { |f| f[:file] }
           @errors.add(:content, "No files listed") if files.empty?
-          # Ensure listed files exist
-          files.each_with_index do |f,i|
-            @errors.add(:content, "File not found: #{files[i]}") unless File.file?(f) || !derivativePaths(f).empty?
-          end
           # Replace collection error if collection not found
           if media_object.collection.nil?
             @errors.messages[:collection] = ["Collection not found: #{@fields[:collection].first}"]
             @errors.messages.delete(:governing_policy)
           end
+        end
+
+        def file_valid?(file_spec)
+          valid = true
+          # Check file offsets for valid format
+          if file_spec[:offset].present? && !Avalon::Batch::Entry.offset_valid?(file_spec[:offset])
+            @errors.add(:offset, "Invalid offset: #{file_spec[:offset]}")
+            valid = false
+          end
+          # Ensure listed files exist
+          if File.file?(file_spec[:file])
+            #Do nothing.
+          else
+            if derivativePaths(file_spec[:file]).present? && file_spec[:skip_transcoding]
+              #Do nothing.
+            elsif derivativePaths(file_spec[:file]).present? && !file_spec[:skip_transcoding]
+              @errors.add(:content, "Derivative files found but skip transcoding not selected")
+              valid = false
+            else
+              @errors.add(:content, "File not found: #{file_spec[:file]}")
+              valid = false
+            end
+          end
+          valid
         end
 
         def self.offset_valid?( offset )
@@ -88,14 +106,18 @@ module Avalon
           master_file.save(validate: false) #required: need pid before setting mediaobject
           master_file.mediaobject = media_object
           master_file.absolute_location = file_spec[:absolute_location] if file_spec[:absolute_location].present?
-          master_file.set_workflow(file_spec[:skip_transcoding] ? 'skip_transcoding' : false)
           master_file.label = file_spec[:label] if file_spec[:label].present?
           master_file.poster_offset = file_spec[:offset] if file_spec[:offset].present?
-          
-          master_file.setContent(gatherFiles(file_spec[:file]))
+         
+          #Make sure to set content before setting the workflow 
+          files = gatherFiles(file_spec[:file])
+          master_file.setContent(files)
+          master_file.set_workflow(file_spec[:skip_transcoding] ? 'skip_transcoding' : nil)
           if master_file.save
             media_object.save(validate: false)
-            master_file.process
+            master_file.process(files)
+          else
+            logger.error "Problem saving MasterFile(#{master_file.pid}): #{master_file.errors.full_messages.to_sentence}"
           end
         end
 
